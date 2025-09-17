@@ -1,0 +1,10 @@
+
+# Playwright
+node_modules/
+/test-results/
+/playwright-report/
+/blob-report/
+/playwright/.cache/
+scripts/mail.env.ps1
+test-results/last-run.log
+test-results/playwright-report.zip
