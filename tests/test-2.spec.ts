@@ -18,9 +18,18 @@ test('test', async ({ page }) => {
   await page.getByRole('textbox', { name: 'DECEDENT FIRST NAME*' }).fill('first');
   await page.getByRole('button', { name: 'PRIORITY' }).click();
   await page.getByRole('option', { name: 'LOW' }).locator('div').first().click();
-  await page.getByRole('textbox', { name: 'REMOVAL LOCATION' }).click();
-  await page.getByRole('textbox', { name: 'REMOVAL LOCATION' }).fill('123 main st');
-  await page.getByText('Main StreetQueens, NY, USA').click();
+  await page.locator('#place_of_removal').getByRole('button', { name: /COUNTRY\*/ }).click();
+  await page
+  .locator('.v-menu__content.menuable__content__active')
+  .getByRole('option', { name: 'United States', exact: true })
+  .click();;
+  await page.getByRole('textbox', { name: 'ADDRESS*' }).fill('123 main st');
+  await page.getByRole('textbox', { name: 'CITY*' }).click();
+  await page.getByRole('textbox', { name: 'CITY*' }).fill('city');
+  await page.getByRole('textbox', { name: 'STATE*' }).click();
+  await page.getByText('Alabama').click();
+  await page.getByRole('textbox', { name: 'ZIP*' }).click();
+  await page.getByRole('textbox', { name: 'ZIP*' }).fill('1234567');;
   await page.getByRole('textbox', { name: 'ON-SITE CONTACT', exact: true }).click();
   await page.getByRole('textbox', { name: 'ON-SITE CONTACT', exact: true }).fill('Full name');
   await page.getByRole('button', { name: 'Save' }).click();
