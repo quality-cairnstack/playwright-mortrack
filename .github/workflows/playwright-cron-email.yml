@@ -67,7 +67,7 @@ jobs:
             Branch: ${{ github.ref_name }}
           attachments: |
             playwright-report.tgz
-      - name: Notice: SMTP secrets missing; relying on GitHub notifications
+      - name: "Notice: SMTP secrets missing; relying on GitHub notifications"
         if: ${{ failure() && steps.check_smtp.outputs.has_smtp != 'true' }}
         run: |
           echo "Tests failed but SMTP secrets are not configured."
