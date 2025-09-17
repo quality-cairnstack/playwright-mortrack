@@ -27,7 +27,7 @@ jobs:
             tar -czf playwright-report.tgz playwright-report || true
           fi
       - name: Email on failure
-        if: failure()
+        if: ${{ failure() && secrets.SMTP_SERVER != '' && secrets.SMTP_PORT != '' && secrets.SMTP_USERNAME != '' && secrets.SMTP_PASSWORD != '' && secrets.MAIL_TO != '' && secrets.MAIL_FROM != '' }}
         uses: dawidd6/action-send-mail@v3
         with:
           server_address: ${{ secrets.SMTP_SERVER }}
@@ -44,10 +44,14 @@ jobs:
             Branch: ${{ github.ref_name }}
           attachments: |
             playwright-report.tgz
+      - name: Notice: SMTP secrets missing; relying on GitHub notifications
+        if: ${{ failure() && (secrets.SMTP_SERVER == '' || secrets.SMTP_PORT == '' || secrets.SMTP_USERNAME == '' || secrets.SMTP_PASSWORD == '' || secrets.MAIL_TO == '' || secrets.MAIL_FROM == '') }}
+        run: |
+          echo "Tests failed but SMTP secrets are not configured."
+          echo "Configure SMTP_SERVER, SMTP_PORT, SMTP_USERNAME, SMTP_PASSWORD, MAIL_FROM, MAIL_TO to enable email sending."
       - uses: actions/upload-artifact@v4
         if: ${{ !cancelled() }}
         with:
           name: playwright-report
           path: playwright-report/
           retention-days: 14
-
