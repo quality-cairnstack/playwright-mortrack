@@ -24,7 +24,7 @@ test('test', async ({ page }) => {
   await page
   .locator('.v-menu__content.menuable__content__active')
   .getByRole('option', { name: 'United States', exact: true })
-  .click();
+  .click();flkafjslkf
   await page.locator('#place_of_removal').getByRole('textbox', { name: 'ADDRESS*' }).fill('123 main st');
   await page.locator('#place_of_removal').getByRole('textbox', { name: 'CITY*' }).click();
   await page.locator('#place_of_removal').getByRole('textbox', { name: 'CITY*' }).fill('city');
