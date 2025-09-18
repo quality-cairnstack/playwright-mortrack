@@ -55,11 +55,13 @@ jobs:
         with:
           server_address: ${{ secrets.SMTP_SERVER }}
           server_port: ${{ secrets.SMTP_PORT }}
+          secure: ${{ secrets.SMTP_PORT == '465' }}
           username: ${{ secrets.SMTP_USERNAME }}
           password: ${{ secrets.SMTP_PASSWORD }}
           subject: "Playwright FAILED: ${{ github.repository }} (#${{ github.run_number }})"
           to: ${{ secrets.MAIL_TO }}
           from: ${{ secrets.MAIL_FROM }}
+          content_type: text/plain
           body: |
             Playwright tests failed on ${{ github.repository }}.
             Run: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
