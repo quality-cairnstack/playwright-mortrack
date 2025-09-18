@@ -10,7 +10,7 @@ test('test', async ({ page }) => {
   await page.getByRole('link', { name: 'Return to Application' }).click();
   await page.getByRole('link', { name: '' }).click();
   await page.getByRole('textbox', { name: 'REPRESENTING*' }).click();
-  await page.getByRole('textbox', { name: 'REPRESENTING*' }).fill('lemley funeral home');
+  await page.getByRole('textbox', { name: 'REPRESENTING*' }).fill('lemley funeral hom');
   await page.getByRole('textbox', { name: 'REPRESENTING*' }).press('ArrowDown');
   await page.getByRole('textbox', { name: 'REPRESENTING*' }).press('Enter');
   await page.getByRole('textbox', { name: 'DECEDENT LAST NAME*' }).click();
