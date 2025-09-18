@@ -9,19 +9,73 @@ jobs:
     timeout-minutes: 60
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v4
-    - uses: actions/setup-node@v4
-      with:
-        node-version: lts/*
-    - name: Install dependencies
-      run: npm ci
-    - name: Install Playwright Browsers (Chromium only)
-      run: npx playwright install --with-deps chromium
-    - name: Run Playwright tests (Chromium)
-      run: npx playwright test --project=chromium
-    - uses: actions/upload-artifact@v4
-      if: ${{ !cancelled() }}
-      with:
-        name: playwright-report
-        path: playwright-report/
-        retention-days: 30
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: lts/*
+      - name: Install dependencies
+        run: npm ci
+      - name: Install Playwright Browsers (Chromium only)
+        run: npx playwright install --with-deps chromium
+      - name: Run Playwright tests (Chromium)
+        run: npx playwright test --project=chromium
+      - name: Check SMTP secrets
+        id: check_smtp
+        run: |
+          missing=0
+          for v in SMTP_SERVER SMTP_PORT SMTP_USERNAME SMTP_PASSWORD MAIL_FROM MAIL_TO; do
+            val=$(printenv "$v")
+            if [ -z "$val" ]; then
+              echo "Missing $v" >&2
+              missing=1
+            fi
+          done
+          if [ "$missing" -eq 0 ]; then
+            echo "has_smtp=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "has_smtp=false" >> "$GITHUB_OUTPUT"
+          fi
+        env:
+          SMTP_SERVER: ${{ secrets.SMTP_SERVER }}
+          SMTP_PORT: ${{ secrets.SMTP_PORT }}
+          SMTP_USERNAME: ${{ secrets.SMTP_USERNAME }}
+          SMTP_PASSWORD: ${{ secrets.SMTP_PASSWORD }}
+          MAIL_FROM: ${{ secrets.MAIL_FROM }}
+          MAIL_TO: ${{ secrets.MAIL_TO }}
+      - name: Package HTML report if failed
+        if: failure()
+        run: |
+          if [ -d playwright-report ]; then
+            tar -czf playwright-report.tgz playwright-report || true
+          fi
+      - name: Email on failure
+        if: ${{ failure() && steps.check_smtp.outputs.has_smtp == 'true' }}
+        uses: dawidd6/action-send-mail@v3
+        with:
+          server_address: ${{ secrets.SMTP_SERVER }}
+          server_port: ${{ secrets.SMTP_PORT }}
+          secure: ${{ secrets.SMTP_PORT == '465' }}
+          username: ${{ secrets.SMTP_USERNAME }}
+          password: ${{ secrets.SMTP_PASSWORD }}
+          subject: "Playwright FAILED: ${{ github.repository }} (#${{ github.run_number }})"
+          to: ${{ secrets.MAIL_TO }}
+          from: ${{ secrets.MAIL_FROM }}
+          content_type: text/plain
+          body: |
+            Playwright tests failed on ${{ github.repository }}.
+            Run: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+            Commit: ${{ github.sha }}
+            Branch: ${{ github.ref_name }}
+          attachments: |
+            playwright-report.tgz
+      - name: "Notice: SMTP secrets missing; relying on GitHub notifications"
+        if: ${{ failure() && steps.check_smtp.outputs.has_smtp != 'true' }}
+        run: |
+          echo "Tests failed but SMTP secrets are not configured."
+          echo "Configure SMTP_SERVER, SMTP_PORT, SMTP_USERNAME, SMTP_PASSWORD, MAIL_FROM, MAIL_TO to enable email sending."
+      - uses: actions/upload-artifact@v4
+        if: ${{ !cancelled() }}
+        with:
+          name: playwright-report
+          path: playwright-report/
+          retention-days: 30
