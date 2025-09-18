@@ -31,12 +31,9 @@ test('test', async ({ page }) => {
   await page.locator('#place_of_removal').getByRole('textbox', { name: 'STATE*' }).click();
   await page.getByText('Alabama').click();
   await page.locator('#place_of_removal').getByRole('textbox', { name: 'ZIP*' }).click();
-  await page.locator('#place_of_removal').getByRole('textbox', { name: 'ZIP*' }).fill('1234567');;
+  await page.locator('#place_of_removal').getByRole('textbox', { name: 'ZIP*' }).fill('1234567');
   await page.getByRole('textbox', { name: 'ON-SITE CONTACT', exact: true }).click();
   await page.getByRole('textbox', { name: 'ON-SITE CONTACT', exact: true }).fill('Full name');
-  await page.getByRole('button', { name: 'Save' }).click();
-  await page.getByText('New request submitted').click({
-    button: 'right'
-  });
-  await expect(page.getByText('SUCCESS:New request submitted')).toBeVisible();
+  await page.getByRole('button', { name: 'Save' }).click()
+  await expect(page.getByText('SUCCESS:New request submitted')).toBeVisible()
 });
