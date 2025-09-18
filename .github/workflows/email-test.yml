@@ -1,0 +1,64 @@
+name: SMTP Email Test
+
+on:
+  workflow_dispatch:
+    inputs:
+      to:
+        description: "Override MAIL_TO (optional)"
+        required: false
+      subject:
+        description: "Email subject"
+        required: false
+        default: "SMTP test from GitHub Actions"
+      body:
+        description: "Email body"
+        required: false
+        default: "This is a test email from GitHub Actions."
+
+jobs:
+  send:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check SMTP secrets
+        id: check_smtp
+        run: |
+          missing=0
+          for v in SMTP_SERVER SMTP_PORT SMTP_USERNAME SMTP_PASSWORD MAIL_FROM MAIL_TO; do
+            val=$(printenv "$v")
+            if [ -z "$val" ]; then
+              echo "Missing $v" >&2
+              missing=1
+            fi
+          done
+          if [ "$missing" -eq 0 ]; then
+            echo "has_smtp=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "has_smtp=false" >> "$GITHUB_OUTPUT"
+          fi
+        env:
+          SMTP_SERVER: ${{ secrets.SMTP_SERVER }}
+          SMTP_PORT: ${{ secrets.SMTP_PORT }}
+          SMTP_USERNAME: ${{ secrets.SMTP_USERNAME }}
+          SMTP_PASSWORD: ${{ secrets.SMTP_PASSWORD }}
+          MAIL_FROM: ${{ secrets.MAIL_FROM }}
+          MAIL_TO: ${{ secrets.MAIL_TO }}
+
+      - name: Send test email
+        if: ${{ steps.check_smtp.outputs.has_smtp == 'true' }}
+        uses: dawidd6/action-send-mail@v3
+        with:
+          server_address: ${{ secrets.SMTP_SERVER }}
+          server_port: ${{ secrets.SMTP_PORT }}
+          secure: ${{ secrets.SMTP_PORT == '465' }}
+          username: ${{ secrets.SMTP_USERNAME }}
+          password: ${{ secrets.SMTP_PASSWORD }}
+          subject: ${{ github.event.inputs.subject || 'SMTP test from GitHub Actions' }}
+          to: ${{ github.event.inputs.to || secrets.MAIL_TO }}
+          from: ${{ secrets.MAIL_FROM }}
+          content_type: text/plain
+          body: ${{ github.event.inputs.body || 'This is a test email from GitHub Actions.' }}
+
+      - name: Missing secrets notice
+        if: ${{ steps.check_smtp.outputs.has_smtp != 'true' }}
+        run: |
+          echo "Missing SMTP secrets; configure SMTP_SERVER, SMTP_PORT, SMTP_USERNAME, SMTP_PASSWORD, MAIL_FROM, MAIL_TO."
