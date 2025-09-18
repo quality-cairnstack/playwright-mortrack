@@ -34,6 +34,19 @@ test('test', async ({ page }) => {
   await page.locator('#place_of_removal').getByRole('textbox', { name: 'ZIP*' }).fill('1234567');
   await page.getByRole('textbox', { name: 'ON-SITE CONTACT', exact: true }).click();
   await page.getByRole('textbox', { name: 'ON-SITE CONTACT', exact: true }).fill('Full name');
-  await page.getByRole('button', { name: 'Save' }).click()
-  await expect(page.getByText('SUCCESS:New request submitted')).toBeVisible()
+  const [resp] = await Promise.all([
+    page.waitForResponse(r =>
+      r.url().includes('/app/unit/ajax_request_add') &&
+      r.request().method() === 'POST'
+    ),
+    page.getByRole('button', { name: 'Save' }).click(),
+  ]);
+
+  // Assert network call succeeded and payload indicates success
+  expect(resp.status()).toBe(200);
+  const bodyText = await resp.text();
+  expect(bodyText.toLowerCase()).toContain('success');
+
+  // Assert success toast appears
+  await expect(page.getByText(/SUCCESS:New request submitted/i)).toBeVisible();
 });
