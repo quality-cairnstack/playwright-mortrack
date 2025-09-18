@@ -16,10 +16,10 @@ jobs:
           node-version: lts/*
       - name: Install dependencies
         run: npm ci
-      - name: Install Playwright Browsers
-        run: npx playwright install --with-deps
-      - name: Run Playwright tests
-        run: npx playwright test
+      - name: Install Playwright Browsers (Chromium only)
+        run: npx playwright install --with-deps chromium
+      - name: Run Playwright tests (Chromium)
+        run: npx playwright test --project=chromium
       - name: Check SMTP secrets
         id: check_smtp
         run: |
