@@ -11,8 +11,8 @@ test('test', async ({ page }) => {
   await page.getByRole('link', { name: '' }).click();
   await page.getByRole('textbox', { name: 'REPRESENTING*' }).click();
   await page.getByRole('textbox', { name: 'REPRESENTING*' }).fill('lemley funeral hom');
-  await page.getByRole('textbox', { name: 'REPRESENTING*' }).press('Enter');
-  await page.locator('div.v-list-item__title', { hasText: 'LEMLEY FUNERAL HOME [ PRIMARY ]' }).click();
+  // Select the first matching LEMLEY FUNERAL HOME option (label text may vary)
+  await page.getByRole('option', { name: /LEMLEY FUNERAL HOME/i }).first().click();
   await page.getByRole('textbox', { name: 'DECEDENT LAST NAME*' }).click();
   await page.getByRole('textbox', { name: 'DECEDENT LAST NAME*' }).click();
   await page.getByRole('textbox', { name: 'DECEDENT LAST NAME*' }).fill('last');
