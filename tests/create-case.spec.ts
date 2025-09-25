@@ -6,7 +6,7 @@ test.use({ video: 'on' });
 test('user can create a case', async ({ page }) => {
   await loginAndEnterApplication(page);
 
-  await page.getByRole('link', { name: /Tz$/ }).click();
+  await page.locator('a[href="/app/new_request"]').click();
   await page.getByRole('textbox', { name: 'REPRESENTING*' }).click();
   await page.getByRole('textbox', { name: 'REPRESENTING*' }).fill('lemley funeral hom');
   await page.getByRole('option', { name: /LEMLEY FUNERAL HOME/i }).first().click();
