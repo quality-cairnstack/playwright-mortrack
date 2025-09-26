@@ -28,13 +28,26 @@ test('user can create a case', async ({ page }) => {
 
   const saveButton = page.locator('#request_save_btn');
   await expect(saveButton).toHaveClass('btn_design save_btn v-btn v-btn--outlined theme--light v-size--default');
+  await expect(saveButton).toBeEnabled();
 
-  const [resp] = await Promise.all([
-    page.waitForResponse(
-      r => r.url().includes('/app/unit/ajax_request_add') && r.request().method() === 'POST'
-    ),
-    saveButton.click(),
-  ]);
+  const requestPromise = page.waitForRequest(
+    req => req.url().includes('/app/unit/ajax_request_add') && req.method() === 'POST',
+    { timeout: 15000 }
+  );
+  const responsePromise = page.waitForResponse(
+    resp => resp.url().includes('/app/unit/ajax_request_add') && resp.request().method() === 'POST',
+    { timeout: 60000 }
+  );
+
+  await saveButton.click();
+
+  const request = await requestPromise;
+  console.log('ajax_request_add request:', {
+    url: request.url(),
+    postData: request.postData(),
+  });
+
+  const resp = await responsePromise;
 
   expect(resp.status()).toBe(200);
   const bodyText = await resp.text();
