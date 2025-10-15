@@ -50,9 +50,34 @@ test('user can create a case', async ({ page }) => {
   const resp = await responsePromise;
 
   expect(resp.status()).toBe(200);
-  const bodyText = await resp.text();
-  console.log('ajax_request_add response:', { status: resp.status(), body: bodyText });
-  expect(bodyText.toLowerCase()).toContain('success');
+  const responseBody = await resp.json();
+  console.log('ajax_request_add response:', { status: resp.status(), body: responseBody });
+  expect(responseBody.success).toBe(true);
+
+  const decedent = responseBody.result?.decedent;
+  expect(decedent, 'Expected decedent payload in ajax_request_add response').toBeTruthy();
+  const boxAttributeId = decedent?.box_attributeID;
+  const codeId = decedent?.codeID;
+  expect(boxAttributeId, 'box_attributeID should be defined').toBeTruthy();
+  expect(codeId, 'codeID should be defined').toBeTruthy();
 
   await expect(page.getByText(/SUCCESS:New request submitted/i)).toBeVisible();
+
+  await test.step('Cancel created case via API', async () => {
+    const cancelResponse = await page.context().request.post('/app/unit/ajax_request_update', {
+      form: {
+        box_attributeID: String(boxAttributeId),
+        codeID: String(codeId),
+        reason: 'mm',
+        'changes[0][name]': '3',
+        'changes[0][old]': '',
+        'changes[0][new]': '',
+      },
+    });
+
+    expect(cancelResponse.status(), 'Cancel request should respond with 200').toBe(200);
+    const cancelBody = await cancelResponse.json();
+    console.log('ajax_request_update response:', cancelBody);
+    expect(cancelBody.success).toBe(true);
+  });
 });
