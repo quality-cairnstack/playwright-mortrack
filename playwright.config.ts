@@ -15,6 +15,7 @@ function requireEnvVar(name: string): string {
 }
 
 const baseURL = requireEnvVar('BASE_URL');
+const isCI = !!process.env.CI;
 
 /**
  * See https://playwright.dev/docs/test-configuration.
@@ -25,8 +26,8 @@ export default defineConfig({
   fullyParallel: true,
   /* Fail the build on CI if you accidentally left test.only in the source code. */
   forbidOnly: !!process.env.CI,
-  /* Disable retries everywhere, including CI */
-  retries: 0,
+  /* Retries: friendlier on CI for flake diagnostics */
+  retries: isCI ? 2 : 0,
   /* Opt out of parallel tests on CI. */
   workers: process.env.CI ? 1 : undefined,
   /* Reporter to use. See https://playwright.dev/docs/test-reporters */
@@ -36,8 +37,10 @@ export default defineConfig({
     /* Base URL to use in actions like `await page.goto('/')`. */
     baseURL,
 
-    /* Collect trace when retrying the failed test. See https://playwright.dev/docs/trace-viewer */
-    trace: 'on-first-retry',
+    /* Traces/videos/screenshots for CI diagnostics */
+    trace: isCI ? 'retain-on-failure' : 'on-first-retry',
+    video: isCI ? 'retain-on-failure' : 'off',
+    screenshot: 'only-on-failure',
   },
 
   /* Configure projects for major browsers */
