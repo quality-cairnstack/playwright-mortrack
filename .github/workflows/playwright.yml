@@ -13,7 +13,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 60
     env:
-      BASE_URL: ${{ vars.BASE_URL || secrets.BASE_URL }}
+      BASE_URL: ${{ vars.BASE_URL || secrets.BASE_URL || 'https://mortrack.app' }}
       E2E_LOGIN_EMAIL: ${{ secrets.E2E_LOGIN_EMAIL }}
       E2E_LOGIN_PASSWORD: ${{ secrets.E2E_LOGIN_PASSWORD }}
     steps:
