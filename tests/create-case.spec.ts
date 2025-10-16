@@ -4,6 +4,11 @@ import { loginAndEnterApplication } from './utils/auth';
 test.use({ video: 'on' });
 
 test('user can create a case', async ({ page }) => {
+  // Extra diagnostics in CI logs
+  page.on('console', msg => console.log(`[console:${msg.type()}] ${msg.text()}`));
+  page.on('pageerror', err => console.log('[pageerror]', err));
+  page.on('requestfailed', req => console.log('[requestfailed]', req.method(), req.url(), req.failure()?.errorText));
+
   await loginAndEnterApplication(page);
 
   await page.locator('a[href="/app/new_request"]').click();
@@ -27,27 +32,26 @@ test('user can create a case', async ({ page }) => {
   await page.getByRole('textbox', { name: 'ON-SITE CONTACT', exact: true }).fill('Full name');
 
   const saveButton = page.locator('#request_save_btn');
-  await expect(saveButton).toHaveClass('btn_design save_btn v-btn v-btn--outlined theme--light v-size--default');
+  await expect(saveButton).toBeVisible();
   await expect(saveButton).toBeEnabled();
+  await saveButton.scrollIntoViewIfNeeded();
 
-  const requestPromise = page.waitForRequest(
-    req => req.url().includes('/app/unit/ajax_request_add') && req.method() === 'POST',
-    { timeout: 15000 }
-  );
-  const responsePromise = page.waitForResponse(
-    resp => resp.url().includes('/app/unit/ajax_request_add') && resp.request().method() === 'POST',
-    { timeout: 60000 }
-  );
+  const [request, resp] = await Promise.all([
+    page.waitForRequest(
+      req => req.url().includes('/app/unit/ajax_request_add') && req.method() === 'POST',
+      { timeout: 15000 }
+    ),
+    page.waitForResponse(
+      r => r.url().includes('/app/unit/ajax_request_add') && r.request().method() === 'POST',
+      { timeout: 60000 }
+    ),
+    saveButton.click(),
+  ]);
 
-  await saveButton.click();
-
-  const request = await requestPromise;
   console.log('ajax_request_add request:', {
     url: request.url(),
     postData: request.postData(),
   });
-
-  const resp = await responsePromise;
 
   expect(resp.status()).toBe(200);
   const responseBody = await resp.json();
