@@ -1,6 +1,7 @@
 import { test, expect } from '@playwright/test';
 import { loginAndEnterApplication } from './utils/auth';
 import { createCase } from './utils/case';
+import { waitForRequestReviewedAlert } from './utils/ui';
 
 test.setTimeout(180000);
 test('create, assign, run to dry-run and verify timestamps', async ({ page }) => {
@@ -25,6 +26,8 @@ test('create, assign, run to dry-run and verify timestamps', async ({ page }) =>
   const tile = page.locator(tileSelector);
   await expect(tile, `Expected case tile ${tileSelector}`).toBeVisible({ timeout: 30000 });
   await tile.locator('.card-header').click();
+  // Only for the first interaction with the case: wait for system alert
+  await waitForRequestReviewedAlert(page);
   await expect(detailsPanel).toBeVisible();
 
   // Assign a Removal Tech (prefer the QA account when available)

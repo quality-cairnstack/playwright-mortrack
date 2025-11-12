@@ -1,6 +1,7 @@
 import { test, expect } from '@playwright/test';
 import { loginAndEnterApplication } from './utils/auth';
 import { createCase, cancelCase } from './utils/case';
+import { waitForRequestReviewedAlert } from './utils/ui';
 
 test.setTimeout(120000);
 test('create case, verify details in dispatcher, then cancel', async ({ page }) => {
@@ -35,6 +36,9 @@ test('create case, verify details in dispatcher, then cancel', async ({ page }) 
     await expect(firstMatch, 'Expected name match in results').toBeVisible({ timeout: 15000 });
     await firstMatch.click();
   }
+
+  // Wait for the initial system alert to appear after opening the case
+  await waitForRequestReviewedAlert(page);
 
   // Wait for the details panel to become visible; click tile again if necessary
   try {
