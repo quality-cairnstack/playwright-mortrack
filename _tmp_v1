@@ -30,14 +30,15 @@ test('create case, verify details in dispatcher, then cancel', async ({ page }) 
     const tile = page.locator(boxId);
     await expect(tile, `Expected result tile ${boxId} after search`).toBeVisible({ timeout: 30000 });
     await tile.locator('.card-header').click();
-    await waitForRequestReviewedAlert(page);
   } else if (caseData?.deceased_last && caseData?.deceased_first) {
     const nameRegex = new RegExp(`${caseData.deceased_last}\s*,\s*${caseData.deceased_first}`, 'i');
     const firstMatch = page.getByText(nameRegex).first();
     await expect(firstMatch, 'Expected name match in results').toBeVisible({ timeout: 15000 });
     await firstMatch.click();
-    await waitForRequestReviewedAlert(page);
   }
+
+  // Wait for the initial system alert to appear after opening the case
+  await waitForRequestReviewedAlert(page);
 
   // Wait for the details panel to become visible; click tile again if necessary
   try {
@@ -65,6 +66,7 @@ test('create case, verify details in dispatcher, then cancel', async ({ page }) 
     }
     await expect(detailsPanel).toBeVisible({ timeout: 10000 });
   }
+
   await expect(detailsPanel.getByText(/Business:/i)).toBeVisible();
   if (caseData?.deceased_last && caseData?.deceased_first) {
     const nameInDetails = new RegExp(`${caseData.deceased_last}\s*,\s*${caseData.deceased_first}`, 'i');

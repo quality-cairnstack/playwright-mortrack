@@ -1,9 +1,12 @@
 import { expect, type Page } from '@playwright/test';
 
-// Waits until the system alert message contains "Request Reviewed".
-// Presence in the DOM is sufficient; visibility is not required.
+// Wait until the "Request Reviewed" success alert is actually shown (visible).
+// This avoids passing early when the DOM node exists but is hidden by CSS.
 export async function waitForRequestReviewedAlert(page: Page): Promise<void> {
-  const alertMessage = page.locator('#system-alertMessage');
-  await expect(alertMessage).toContainText(/Request Reviewed/i, { timeout: 30000 });
+  const alert = page.locator('#system-alert');
+  const title = alert.locator('#system-alertTitle');
+  const message = alert.locator('#system-alertMessage');
+  await expect(alert).toBeVisible({ timeout: 30000 });
+  await expect(title).toContainText(/SUCCESS:/i);
+  await expect(message).toContainText(/Request Reviewed/i);
 }
-

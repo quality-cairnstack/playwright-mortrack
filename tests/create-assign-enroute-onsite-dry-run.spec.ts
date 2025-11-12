@@ -26,7 +26,7 @@ test('create, assign, run to dry-run and verify timestamps', async ({ page }) =>
   const tile = page.locator(tileSelector);
   await expect(tile, `Expected case tile ${tileSelector}`).toBeVisible({ timeout: 30000 });
   await tile.locator('.card-header').click();
-  // Only for the first interaction with the case: wait for system alert
+  // Only for the first interaction with the case: wait immediately after opening the case
   await waitForRequestReviewedAlert(page);
   await expect(detailsPanel).toBeVisible();
 
