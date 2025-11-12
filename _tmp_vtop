@@ -1,0 +1,20 @@
+import { test, expect } from '@playwright/test';
+import { loginAndEnterApplication } from './utils/auth';
+import { createCase, cancelCase } from './utils/case';
+import { waitForRequestReviewedAlert } from './utils/ui';
+
+test.setTimeout(120000);
+test('create case, verify details in dispatcher, then cancel', async ({ page }) => {
+  // Sign in and enter the app
+  await loginAndEnterApplication(page);
+
+  // Create a new case and obtain identifiers
+  const caseData = await createCase(page);
+
+  // Navigate to dispatcher where search is performed
+  await page.goto('/app/dispatcher/');
+
+  // Perform liveqr search
+  if (caseData.liveqr) {
+    const searchBox = page.getByRole('textbox', { name: 'Type and Press Enter to Search' });
+    await expect(searchBox).toBeVisible();

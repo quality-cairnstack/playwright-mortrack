@@ -1,7 +1,7 @@
 import { test, expect } from '@playwright/test';
 import { loginAndEnterApplication } from './utils/auth';
 import { createCase, cancelCase } from './utils/case';
-import { waitForRequestReviewedAlert } from './utils/ui';
+import { waitForRequestReviewedAlert, waitForDispatcherViewed } from './utils/ui';
 
 test.setTimeout(120000);
 test('create case, verify details in dispatcher, then cancel', async ({ page }) => {
@@ -30,12 +30,14 @@ test('create case, verify details in dispatcher, then cancel', async ({ page }) 
     const tile = page.locator(boxId);
     await expect(tile, `Expected result tile ${boxId} after search`).toBeVisible({ timeout: 30000 });
     await tile.locator('.card-header').click();
+    await waitForDispatcherViewed(page, caseData.box_attributeID);
     await waitForRequestReviewedAlert(page);
   } else if (caseData?.deceased_last && caseData?.deceased_first) {
     const nameRegex = new RegExp(`${caseData.deceased_last}\s*,\s*${caseData.deceased_first}`, 'i');
     const firstMatch = page.getByText(nameRegex).first();
     await expect(firstMatch, 'Expected name match in results').toBeVisible({ timeout: 15000 });
     await firstMatch.click();
+    await waitForDispatcherViewed(page, caseData.box_attributeID);
     await waitForRequestReviewedAlert(page);
   }
 
