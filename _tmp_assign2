@@ -1,0 +1,80 @@
+   1: import { test, expect } from '@playwright/test';
+   2: import { loginAndEnterApplication } from './utils/auth';
+   3: import { createCase, cancelCase } from './utils/case';
+   4: import { waitForRequestReviewedAlert, waitForDriverOptions } from './utils/ui';
+   5: 
+   6: test.setTimeout(120000);
+   7: test('Assign a RT', async ({ page }) => {
+   8:   // Sign in and enter the app using shared utils
+   9:   await loginAndEnterApplication(page);
+  10: 
+  11:   // Create a new case via component util
+  12:   const caseData = await createCase(page);
+  13: 
+  14:   // Go to dispatcher to locate the created case
+  15:   await page.goto('/app/dispatcher/');
+  16: 
+  17:   // Search by liveqr if available for precise lookup
+  18:   if (caseData.liveqr) {
+  19:     const searchBox = page.getByRole('textbox', { name: 'Type and Press Enter to Search' });
+  20:     await expect(searchBox).toBeVisible();
+  21:     await searchBox.fill(caseData.liveqr);
+  22:     await searchBox.press('Enter');
+  23:   }
+  24: 
+  25:   // Open the case details panel
+  26:   const detailsPanel = page.locator('#request-detail-container');
+  27:   const boxId = caseData?.box_attributeID ? `#box_attributeID_${caseData.box_attributeID}` : '';
+  28: 
+  29:   if (boxId) {
+  30:     const tile = page.locator(boxId);
+  31:     await expect(tile, `Expected result tile ${boxId} after search`).toBeVisible({ timeout: 30000 });
+  32:     await tile.locator('.card-header').click();
+  33:     // Wait immediately after opening case for the Request Reviewed alert to display
+  34:     await waitForRequestReviewedAlert(page);
+  35:   } else if (caseData?.deceased_last && caseData?.deceased_first) {
+  36:     const nameRegex = new RegExp(`${caseData.deceased_last}\\s*,\\s*${caseData.deceased_first}`, 'i');
+  37:     const firstMatch = page.getByText(nameRegex).first();
+  38:     await expect(firstMatch, 'Expected name match in results').toBeVisible({ timeout: 15000 });
+  39:     await firstMatch.click();
+  40:     await waitForRequestReviewedAlert(page);
+  41:   }
+  42: 
+  43:   // Ensure the details panel is visible
+  44:   try {
+  45:     await expect(detailsPanel).toBeVisible({ timeout: 10000 });
+  46:   } catch {
+  47:     // Retry opening if it didn't show on first click
+  48:     if (boxId) {
+  49:       const tile = page.locator(boxId);
+  50:       await tile.locator('.card-header').click();
+  51:     }
+  52:     await expect(detailsPanel).toBeVisible({ timeout: 10000 });
+  53:   }
+  54:   // Assign a Removal Tech
+  55:   const assignBtn = detailsPanel.getByRole('button', { name: /Assign Removal Tech/i });
+  56:   await expect(assignBtn).toBeVisible();
+  57:   await assignBtn.click();
+  58:   // Wait for driver/vehicle options to load and become visible
+  59:   await waitForDriverOptions(page);
+  60: 
+  61:   // Choose a vehicle/driver (prefer the QA account when available)
+  62:   const qaOption = page.locator('.vehicle_profile', { hasText: 'Quality Assurance' }).first();
+  63:   const anyOption = page.locator('.vehicle_profile').first();
+  64:   if (await qaOption.count()) {
+  65:     await qaOption.click();
+  66:   } else {
+  67:     await expect(anyOption).toBeVisible({ timeout: 30000 });
+  68:     await anyOption.click();
+  69:   }
+  70: 
+  71:   const saveAlertBtn = page.getByRole('button', { name: /Save & Alert/i });
+  72:   await expect(saveAlertBtn).toBeVisible();
+  73:   await saveAlertBtn.click();
+  74: 
+  75:   // Verify that the assigned driver is displayed (QA preferred)
+  76:   await expect(detailsPanel.locator('#assigned-driver').getByText('Quality Assurance')).toBeVisible({ timeout: 30000 });
+  77: 
+  78:   // Cleanup: cancel the case using shared util
+  79:   await cancelCase(page, caseData);
+  80: });

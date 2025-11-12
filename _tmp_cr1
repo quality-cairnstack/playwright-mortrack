@@ -1,0 +1,60 @@
+import { test, expect } from '@playwright/test';
+import { loginAndEnterApplication } from './utils/auth';
+import { createCase } from './utils/case';
+import { waitForRequestReviewedAlert, waitForDriverOptions, clickPreferredOrAnyDriver } from './utils/ui';
+
+test.setTimeout(180000);
+test('create, assign, run to dry-run and verify timestamps', async ({ page }) => {
+  // Sign in
+  await loginAndEnterApplication(page);
+
+  // Create a new case and capture identifiers
+  const caseData = await createCase(page);
+
+  // Go to dispatcher, locate and open the created case
+  await page.goto('/app/dispatcher/');
+
+  if (caseData.liveqr) {
+    const searchBox = page.getByRole('textbox', { name: 'Type and Press Enter to Search' });
+    await expect(searchBox).toBeVisible();
+    await searchBox.fill(caseData.liveqr);
+    await searchBox.press('Enter');
+  }
+
+  const detailsPanel = page.locator('#request-detail-container');
+  const tileSelector = `#box_attributeID_${caseData.box_attributeID}`;
+  const tile = page.locator(tileSelector);
+  await expect(tile, `Expected case tile ${tileSelector}`).toBeVisible({ timeout: 30000 });
+  await tile.locator('.card-header').click();
+  // Only for the first interaction with the case: wait immediately after opening the case
+  await waitForRequestReviewedAlert(page);
+  await expect(detailsPanel).toBeVisible();
+
+  // Assign a Removal Tech (prefer the QA account when available)
+  const assignBtn = detailsPanel.getByRole('button', { name: /Assign Removal Tech/i });
+  await expect(assignBtn).toBeVisible();
+  await assignBtn.click();
+  await waitForDriverOptions(page);
+  await clickPreferredOrAnyDriver(page);
+
+  const saveAlertBtn = page.getByRole('button', { name: /Save & Alert/i });
+  await expect(saveAlertBtn).toBeVisible();
+  await saveAlertBtn.click();
+
+  // Go to the driver/assignments view to run the case
+  const driverLink = page.getByRole('link', { name: // });
+  if (await driverLink.count()) {
+    await driverLink.click();
+  } else {
+    // Fallback: try an alternative nav label if present
+    const fallbackDriver = page.getByRole('link', { name: /Driver|Assignments|Assigned/i }).first();
+    if (await fallbackDriver.count()) await fallbackDriver.click();
+  }
+
+  // Open the row for this case using the dynamic box_attributeID
+  const driverRow = page.locator(`#tr_${caseData.box_attributeID}`);
+  await expect(driverRow).toBeVisible({ timeout: 60000 });
+  const assignedCell = driverRow.getByRole('cell', { name: /Assigned/i });
+  if (await assignedCell.count()) {
+    await assignedCell.click();
+  } else {

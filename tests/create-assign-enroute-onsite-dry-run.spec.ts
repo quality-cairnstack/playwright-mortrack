@@ -1,7 +1,7 @@
 import { test, expect } from '@playwright/test';
 import { loginAndEnterApplication } from './utils/auth';
 import { createCase } from './utils/case';
-import { waitForRequestReviewedAlert } from './utils/ui';
+import { waitForRequestReviewedAlert, waitForDriverOptions, clickPreferredOrAnyDriver, waitForDispatcherViewed } from './utils/ui';
 
 test.setTimeout(180000);
 test('create, assign, run to dry-run and verify timestamps', async ({ page }) => {
@@ -26,7 +26,8 @@ test('create, assign, run to dry-run and verify timestamps', async ({ page }) =>
   const tile = page.locator(tileSelector);
   await expect(tile, `Expected case tile ${tileSelector}`).toBeVisible({ timeout: 30000 });
   await tile.locator('.card-header').click();
-  // Only for the first interaction with the case: wait immediately after opening the case
+  // Wait for backend reviewed marker + success alert to fully process before interacting further
+  await waitForDispatcherViewed(page, caseData.box_attributeID);
   await waitForRequestReviewedAlert(page);
   await expect(detailsPanel).toBeVisible();
 
@@ -34,15 +35,8 @@ test('create, assign, run to dry-run and verify timestamps', async ({ page }) =>
   const assignBtn = detailsPanel.getByRole('button', { name: /Assign Removal Tech/i });
   await expect(assignBtn).toBeVisible();
   await assignBtn.click();
-
-  const qaOption = page.locator('.vehicle_profile', { hasText: 'Quality Assurance' }).first();
-  const anyOption = page.locator('.vehicle_profile').first();
-  if (await qaOption.count()) {
-    await qaOption.click();
-  } else {
-    await expect(anyOption).toBeVisible();
-    await anyOption.click();
-  }
+  await waitForDriverOptions(page);
+  await clickPreferredOrAnyDriver(page);
 
   const saveAlertBtn = page.getByRole('button', { name: /Save & Alert/i });
   await expect(saveAlertBtn).toBeVisible();
@@ -140,3 +134,6 @@ test('create, assign, run to dry-run and verify timestamps', async ({ page }) =>
     }, { timeout: 30000, message: `Waiting for timestamp in .row.status.${cls}` }).toMatch(/\d/);
   }
 });
+
+
+

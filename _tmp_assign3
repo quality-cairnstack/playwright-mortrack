@@ -1,7 +1,7 @@
 import { test, expect } from '@playwright/test';
 import { loginAndEnterApplication } from './utils/auth';
 import { createCase, cancelCase } from './utils/case';
-import { waitForRequestReviewedAlert, waitForDriverOptions, clickPreferredOrAnyDriver, waitForDispatcherViewed } from './utils/ui';
+import { waitForRequestReviewedAlert, waitForDriverOptions, clickPreferredOrAnyDriver } from './utils/ui';
 
 test.setTimeout(120000);
 test('Assign a RT', async ({ page }) => {
@@ -30,15 +30,13 @@ test('Assign a RT', async ({ page }) => {
     const tile = page.locator(boxId);
     await expect(tile, `Expected result tile ${boxId} after search`).toBeVisible({ timeout: 30000 });
     await tile.locator('.card-header').click();
-    // Wait for backend reviewed marker + success alert to fully process
-    await waitForDispatcherViewed(page, caseData.box_attributeID);
+    // Wait immediately after opening case for the Request Reviewed alert to display
     await waitForRequestReviewedAlert(page);
   } else if (caseData?.deceased_last && caseData?.deceased_first) {
     const nameRegex = new RegExp(`${caseData.deceased_last}\\s*,\\s*${caseData.deceased_first}`, 'i');
     const firstMatch = page.getByText(nameRegex).first();
     await expect(firstMatch, 'Expected name match in results').toBeVisible({ timeout: 15000 });
     await firstMatch.click();
-    await waitForDispatcherViewed(page, caseData.box_attributeID);
     await waitForRequestReviewedAlert(page);
   }
 
@@ -73,4 +71,3 @@ test('Assign a RT', async ({ page }) => {
   // Cleanup: cancel the case using shared util
   await cancelCase(page, caseData);
 });
-
